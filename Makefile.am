@@ -1,3 +1,3 @@
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS=$(srcreldir)
+SUBDIRS=$(src_reldir) $(test_reldir)

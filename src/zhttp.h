@@ -3,6 +3,11 @@
 
 #include <zmq.h>
 
+#include "zh-method.h" // HTTP Method Header
+#include "zh-msg.h" // HTTP Message Header
+#include "zh-srv.h" // HTTP Server Header
+#include "zh-cli.h" // HTTP Client Header
+
 /**
  * Initialize 0MQ Socket
  *

@@ -1,4 +1,19 @@
 # Directory reference
 
-srcreldir=src
-srcabsdir=$(top_srcdir)/$(srcreldir)
+src_reldir=src
+src_absdir=$(top_srcdir)/$(src_reldir)
+src_builddir=$(top_builddir)/$(src_reldir)
+
+test_reldir=tests
+test_absdir=$(top_srcdir)/$(test_reldir)
+
+# Default CFLAGS
+
+zhttp_lib=$(src_builddir)/libzhttp.la
+
+AM_CFLAGS=-I$(top_srcdir) \
+		  -I$(src_absdir) \
+		  -Wall -Werror -Wextra \
+		  $(ZMQ_CFLAGS)
+
+AM_LDFLAGS=$(ZMQ_LIBS)

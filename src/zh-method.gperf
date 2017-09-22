@@ -1,0 +1,60 @@
+%{
+#include <string.h>
+#include "zh-method.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+
+struct zh_method_entry { const char * name; zh_method_t method; };
+%}
+struct zh_method_entry
+
+%struct-type
+%language=ANSI-C
+%global-table
+%define word-array-name zh_method_entries
+%define hash-function-name __zh_method_hash
+%define lookup-function-name __zh_method_lookup
+
+%%
+GET,ZH_GET
+POST,ZH_POST
+HEAD,ZH_HEAD
+PUT,ZH_PUT
+DELETE,ZH_DELETE
+CONNECT,ZH_CONNECT
+OPTIONS,ZH_OPTIONS
+TRACE,ZH_TRACE
+PATCH,ZH_PATCH
+%%
+#pragma GCC diagnostic pop
+
+
+zh_method_t zh_method_from_str(const char * method)
+{
+    return zh_method_from_strn(method, strlen(method));
+}
+
+zh_method_t zh_method_from_strn(const char * method, size_t method_len)
+{
+    struct zh_method_entry * entry;
+
+    if((entry = __zh_method_lookup(method, method_len)))
+        return entry->method;
+
+    return ZH_UNKNOWN_METHOD;
+}
+
+const char * zh_method_to_str(zh_method_t method)
+{
+    size_t i;
+    struct zh_method_entry * entry;
+
+    for(i=0;i<(sizeof(zh_method_entries)/sizeof(struct zh_method_entry));i++){
+        entry = &zh_method_entries[i];
+        if(*entry->name && entry->method == method)
+            return entry->name;
+    }
+
+    return "UNKNOWN";
+}
