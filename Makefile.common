@@ -1,0 +1,4 @@
+# Directory reference
+
+srcreldir=src
+srcabsdir=$(top_srcdir)/$(srcreldir)
