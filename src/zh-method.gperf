@@ -15,6 +15,7 @@ struct zh_method_entry
 %define word-array-name zh_method_entries
 %define hash-function-name __zh_method_hash
 %define lookup-function-name __zh_method_lookup
+%compare-strncmp
 
 %%
 GET,ZH_GET

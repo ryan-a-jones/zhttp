@@ -2,20 +2,47 @@
 #define _ZH_MSG_PRIV_H
 
 /**
+ * Carriage-Return Line-Feed
+ */
+#define ZH_CRLF "\r\n"
+
+/**
+ * Carriage-Return Line-Feed Length
+ */
+#define ZH_CRLF_LEN 2
+
+/**
+ * HTTP Version
+ */
+#define ZH_HTTP "HTTP/1.1"
+
+/**
+ * Initial size for message allocation
+ */
+#define ZH_MSG_INIT_SIZE 100
+
+/**
  * Message Word String
  */
 struct zh_msg_data {
-    void * data; /**< Reference String Start */
+    const void * data; /**< Reference String Start */
     size_t len;  /**< Reference String Length */
 };
 
 /* zh_msg_t */
 struct zh_msg {
-    struct zh_msg_data method, /**< HTTP Method */
-                       url,    /**< HTTP Url */
-                       httpv,  /**< HTTP Version */
-                       header, /**< HTTP Header */
-                       body;   /**< HTTP Body */
+    zh_msg_type_t type;
+
+    union {
+        struct {
+            struct zh_msg_data method, /**< HTTP Method */
+                               url,    /**< HTTP Url */
+                               httpv,  /**< HTTP Version */
+                               header; /**< HTTP Header */
+        } req; /**< Request specific data*/
+    } priv; /**< Fields for message type specific data*/
+
+    struct zh_msg_data body;   /**< HTTP Body */
 
     struct {
         void * data; /**< Data Reference */

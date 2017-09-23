@@ -4,13 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define ZH_CRLF "\r\n"
-
-/**
- * Initial size for message allocation
- */
-#define ZH_MSG_INIT_SIZE 100
-
 /********************************************************************************
  *                      PRIVATE PROTOTYPE FUNCTIONS                             *
  *******************************************************************************/
@@ -46,9 +39,14 @@ void __msg_free(zh_msg_t * msg);
  *                          PUBLIC API FUNCTIONS                                *
  *******************************************************************************/
 
+zh_msg_type_t zh_msg_get_type(const zh_msg_t * msg)
+{
+    return (msg)? msg->type : ZH_MSG_UNKNOWN;
+}
+
 zh_msg_t * zh_msg_req(zh_method_t method, const char * url)
 {
-    return zh_msg_req_str(zh_method_to_str(method), url, "HTTP/1.1");
+    return zh_msg_req_str(zh_method_to_str(method), url, ZH_HTTP);
 }
 
 zh_msg_t * zh_msg_req_str(const char * method, const char * url, const char * httpv)
@@ -69,6 +67,8 @@ zh_msg_t * zh_msg_req_strn( const char * method, size_t method_len,
     if(!msg)
         goto fail;
 
+    msg->type = ZH_MSG_REQ;
+
     new_size = method_len + url_len + httpv_len + 4; //2 spaces + CRLF
 
     if(__msg_data_increase_by(msg, new_size))
@@ -77,33 +77,35 @@ zh_msg_t * zh_msg_req_strn( const char * method, size_t method_len,
     data = msg->raw.data;
 
     /*Append Method*/
-    msg->method.data = memcpy(data, method, method_len);
-    msg->method.len = method_len;
+    msg->priv.req.method.data = memcpy(data, method, method_len);
+    msg->priv.req.method.len = method_len;
     data += method_len;
 
     memcpy(data, " ", 1);
     data++;
 
     /*Append URL*/
-    msg->url.data = memcpy(data, url, url_len);
-    msg->url.len = url_len;
+    msg->priv.req.url.data = memcpy(data, url, url_len);
+    msg->priv.req.url.len = url_len;
     data += url_len;
 
     memcpy(data, " ", 1);
     data++;
 
-    /*Append URL*/
-    msg->httpv.data = memcpy(data, httpv, httpv_len);
-    msg->httpv.len = httpv_len;
+    /*Append HTTP Version*/
+    msg->priv.req.httpv.data = memcpy(data, httpv, httpv_len);
+    msg->priv.req.httpv.len = httpv_len;
     data += httpv_len;
 
-    memcpy(data, ZH_CRLF, 2);
-    data+=2;
+    memcpy(data, ZH_CRLF, ZH_CRLF_LEN);
+    data+=ZH_CRLF_LEN;
 
-    msg->header.data = memcpy(data, ZH_CRLF, 2);
-    msg->header.len = 0;
-    data+=2;
+    /*Empty Header*/
+    msg->priv.req.header.data = memcpy(data, ZH_CRLF, ZH_CRLF_LEN);
+    msg->priv.req.header.len = 0;
+    data+=ZH_CRLF_LEN;
 
+    /*Empty Body*/
     msg->body.data = data;
     msg->body.len = 0;
 
@@ -112,6 +114,20 @@ zh_msg_t * zh_msg_req_strn( const char * method, size_t method_len,
 fail :
     __msg_free(msg);
     return NULL;
+}
+
+zh_method_t zh_msg_req_get_method(const zh_msg_t * msg)
+{
+    if(!msg || (msg->type != ZH_MSG_REQ))
+        return ZH_UNKNOWN_METHOD;
+
+    printf( "--%.*s--%d%s%s\n",
+            (int)msg->priv.req.method.len,
+            (char *) msg->priv.req.method.data,
+            (int)msg->priv.req.method.len,
+            zh_method_to_str(zh_method_from_strn("GET", msg->priv.req.method.len)),
+            zh_method_to_str(zh_method_from_strn("GET", 3)));
+    return zh_method_from_strn((const char *) msg->priv.req.method.data, msg->priv.req.method.len);
 }
 
 void zh_msg_free(zh_msg_t * msg)
@@ -161,5 +177,9 @@ int __msg_data_increase_by(zh_msg_t * msg, size_t inc)
 
 void __msg_free(zh_msg_t * msg)
 {
-    if(msg) free(msg);
+    if(msg){
+        if(msg->raw.data)
+            free(msg->raw.data);
+        free(msg);
+    }
 }
