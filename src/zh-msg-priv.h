@@ -4,16 +4,18 @@
 /**
  * Message Word String
  */
-struct zh_msg_word {
-    char * word; /**< Reference String Start */
-    size_t word_len; /**< Reference String Length */
+struct zh_msg_data {
+    void * data; /**< Reference String Start */
+    size_t len;  /**< Reference String Length */
 };
 
 /* zh_msg_t */
 struct zh_msg {
-    struct zh_msg_word method, /**< HTTP Method */
+    struct zh_msg_data method, /**< HTTP Method */
+                       url,    /**< HTTP Url */
                        httpv,  /**< HTTP Version */
-                       header; /**< HTTP Header */
+                       header, /**< HTTP Header */
+                       body;   /**< HTTP Body */
 
     struct {
         void * data; /**< Data Reference */

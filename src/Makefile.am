@@ -12,7 +12,8 @@ noinst_HEADERS = zh-msg-priv.h
 
 lib_LTLIBRARIES = libzhttp.la
 libzhttp_la_SOURCES = zhttp.c \
-					  zh-method.c
+					  zh-method.c \
+					  zh-msg.c
 
 zh-method.c : zh-method.gperf
 	$(GPERF) $< > $@
