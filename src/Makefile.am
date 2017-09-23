@@ -5,7 +5,8 @@ zhttpincludedir = $(includedir)/zhttp
 zhttpinclude_HEADERS = zhttp.h \
 					   zh-srv.h \
 					   zh-cli.h \
-					   zh-method.h
+					   zh-method.h \
+					   zh-status.h \
 					   zh-msg.h
 
 noinst_HEADERS = zh-msg-priv.h

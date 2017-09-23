@@ -44,27 +44,33 @@ zh_msg_type_t zh_msg_get_type(const zh_msg_t * msg)
     return (msg)? msg->type : ZH_MSG_UNKNOWN;
 }
 
-zh_msg_t * zh_msg_req(zh_method_t method, const char * url)
+zh_msg_t * zh_msg_req(void * sock, zh_method_t method, const char * url)
 {
-    return zh_msg_req_str(zh_method_to_str(method), url, ZH_HTTP);
+    return zh_msg_req_str(sock, zh_method_to_str(method), url, ZH_HTTP);
 }
 
-zh_msg_t * zh_msg_req_str(const char * method, const char * url, const char * httpv)
+zh_msg_t * zh_msg_req_str(void * sock, const char * method, const char * url, const char * httpv)
 {
     if(method && url && httpv)
-        return zh_msg_req_strn(method, strlen(method), url, strlen(url), httpv, strlen(httpv));
+        return zh_msg_req_strn(sock, method, strlen(method), url, strlen(url), httpv, strlen(httpv));
 
     return NULL;
 }
-zh_msg_t * zh_msg_req_strn( const char * method, size_t method_len,
+zh_msg_t * zh_msg_req_strn( void * sock,
+                            const char * method, size_t method_len,
                             const char * url, size_t url_len,
                             const char * httpv, size_t httpv_len)
 {
     size_t new_size;
     void * data;
-    zh_msg_t * msg = __msg_new(ZH_MSG_INIT_SIZE);
+    zh_msg_t * msg = NULL;
 
-    if(!msg)
+    if(!(msg = __msg_new(ZH_MSG_INIT_SIZE)))
+        goto fail;
+
+    /*Get socket options*/
+    msg->id.len = ZMQ_IDENTITY_LEN;
+    if(zmq_getsockopt(sock, ZMQ_IDENTITY, msg->id.data, &msg->id.len))
         goto fail;
 
     msg->type = ZH_MSG_REQ;
@@ -121,12 +127,6 @@ zh_method_t zh_msg_req_get_method(const zh_msg_t * msg)
     if(!msg || (msg->type != ZH_MSG_REQ))
         return ZH_UNKNOWN_METHOD;
 
-    printf( "--%.*s--%d%s%s\n",
-            (int)msg->priv.req.method.len,
-            (char *) msg->priv.req.method.data,
-            (int)msg->priv.req.method.len,
-            zh_method_to_str(zh_method_from_strn("GET", msg->priv.req.method.len)),
-            zh_method_to_str(zh_method_from_strn("GET", 3)));
     return zh_method_from_strn((const char *) msg->priv.req.method.data, msg->priv.req.method.len);
 }
 

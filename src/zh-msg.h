@@ -23,6 +23,32 @@
  */
 #define ZH_MSG_INIT_SIZE 100
 
+/********************************************************************
+ *                        ZHTTP MESSAGING                           *
+ ********************************************************************
+ * zh_msg_t is the structure used by zhttp for both inbound and     *
+ * outbound messages. Some methods are available for all types      *
+ * of messages while others can only be used with a specific type.  *
+ *                                                                  *
+ * SYMBOLS FOR ALL TYPES                                            *
+ *  - zh_msg_t          : Message handle                            *
+ *  - zh_msg_type_t     : Enumerated types for messages             *
+ *  - zh_msg_get_type() : Get the zh_msg_type_t of the message      *
+ *  - zh_msg_raw()      : Create a handle from raw data             *
+ *  - zh_msg_free()     : Free a message handle                     *
+ *                                                                  *
+ * SYMBOLS FOR REQUEST MESSAGES (ZH_MSG_REQ)                        *
+ *  - zh_msg_req()                                                  *
+ *    zh_msg_req_str()                                              *
+ *    zh_msg_req_strn()       : Create a new request message        *
+ *  - zh_msg_req_get_method() : Get method of request message       *
+ * SYMBOLS FOR RESPONSE MESSAGES (ZH_MSG_RES)                       *
+ *  - zh_msg_res()                                                  *
+ *    zh_msg_res_str()                                              *
+ *    zh_msg_res_strn()         : Create a new response message     *
+ *                                                                  *
+ *******************************************************************/
+
 /**
  * ZHTTP Message Handle
  *
@@ -42,6 +68,28 @@ typedef enum {
 } zh_msg_type_t;
 
 /**
+ * Get a message instance from raw data
+ *
+ * Free with call to zh_msg_free()
+ *
+ * @param data  Data buffer to be converted to zh_msg
+ * @param len   Length of data buffer
+ * @param hint  The type of message to create. If the message
+ *              type is completely unknown, ZHTTP will try to
+ *              infer this value when hint is set to ZH_MSG_UNKNOWN
+ */
+zh_msg_t * zh_msg_raw(void * data, size_t len, zh_msg_type_t hint);
+
+/**
+ * Get message type of a message
+ *
+ * @param msh ZHTTP message instance
+ * @returns The type of the message. May be ZH_MSG_UNKNOWN
+ *          if the type is not known.
+ */
+zh_msg_type_t zh_msg_get_type(const zh_msg_t * msg);
+
+/**
  * Free a ZHTTP Message
  *
  * @param msh ZHTTP message instance
@@ -53,21 +101,38 @@ void zh_msg_free(zh_msg_t * msg);
  *
  * Free with call to zh_msg_free().
  *
+ * @param   zsock   The ZMQ socket to make a request against
  * @param   method  The HTTP method to use
  * @param   url     The relative URL to request
  * @returns zh_msg_t request instance or NULL if memory allocation
  *          failure occurs.
- *
- * Example :
- *      zh_msg_t * msg = zh_msg_req(ZH_GET, "/api/test");
  */
-zh_msg_t * zh_msg_req(zh_method_t method, const char * url);
+zh_msg_t * zh_msg_req(void * zsock, zh_method_t method, const char * url);
 
 /**
  * Construct a new zh_msg_t message request instance with custom options.
  *
  * Free with call to zh_msg_free().
  *
+ * @param   zsock   The ZMQ socket to make a request against
+ * @param   method  The HTTP method string to use
+ * @param   url     The relative URL to request
+ * @param   httpv   The HTTP version to send with.
+ *                  NOTE: ZHTTP does not interpret the version sent.
+ *                  Therefore, if you create an "HTTP/0.9" message, for example,
+ *                  ZHTTP will not prevent you from sending chunked data or other
+ *                  options unsupported by HTTP 0.9.
+ * @returns zh_msg_t request instance or NULL if memory allocation
+ *          failure occurs.
+ */
+zh_msg_t * zh_msg_req_str(void * zsock, const char * method, const char * url, const char * httpv);
+
+/**
+ * Construct a new zh_msg_t message request instance with custom options.
+ *
+ * Free with call to zh_msg_free().
+ *
+ * @param   zsock   The ZMQ socket to make a request against
  * @param   method  The HTTP method string to use
  * @param   method_len The length of the method string
  * @param   url     The relative URL to request
@@ -82,29 +147,10 @@ zh_msg_t * zh_msg_req(zh_method_t method, const char * url);
  * @returns zh_msg_t request instance or NULL if memory allocation
  *          failure occurs.
  */
-zh_msg_t * zh_msg_req_strn( const char * method, size_t method_len,
+zh_msg_t * zh_msg_req_strn( void * zsock,
+                            const char * method, size_t method_len,
                             const char * url, size_t url_len,
                             const char * httpv, size_t httpv_len);
-
-/**
- * Construct a new zh_msg_t message request instance with custom options.
- *
- * Free with call to zh_msg_free().
- *
- * @param   method  The HTTP method string to use
- * @param   url     The relative URL to request
- * @param   httpv   The HTTP version to send with.
- *                  NOTE: ZHTTP does not interpret the version sent.
- *                  Therefore, if you create an "HTTP/0.9" message, for example,
- *                  ZHTTP will not prevent you from sending chunked data or other
- *                  options unsupported by HTTP 0.9.
- * @returns zh_msg_t request instance or NULL if memory allocation
- *          failure occurs.
- *
- * Example :
- *      zh_msg_t * msg = zh_msg_req_str("GET", "/api/test", "HTTP/0.9");
- */
-zh_msg_t * zh_msg_req_str(const char * method, const char * url, const char * httpv);
 
 /**
  * Get the method associated with the request message
@@ -117,13 +163,11 @@ zh_msg_t * zh_msg_req_str(const char * method, const char * url, const char * ht
 zh_method_t zh_msg_req_get_method(const zh_msg_t * msg);
 
 /**
- * Get message type of a message
+ * Instantiate a response message to a request message
  *
- * @param msh ZHTTP message instance
- * @returns The type of the message. May be ZH_MSG_UNKNOWN
- *          if the type is not known.
+ * @param req       Request message to respond to
+ * @param status    Status Code
  */
-zh_msg_type_t zh_msg_get_type(const zh_msg_t * msg);
-
+zh_msg_t * zh_msg_res(zh_msg_t * req, int status);
 
 #endif

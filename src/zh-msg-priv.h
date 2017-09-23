@@ -22,6 +22,11 @@
 #define ZH_MSG_INIT_SIZE 100
 
 /**
+ * Maximum ZMQ_IDENTITY size
+ */
+#define ZMQ_IDENTITY_LEN 255
+
+/**
  * Message Word String
  */
 struct zh_msg_data {
@@ -32,6 +37,11 @@ struct zh_msg_data {
 /* zh_msg_t */
 struct zh_msg {
     zh_msg_type_t type;
+
+    struct {
+        char data[ZMQ_IDENTITY_LEN]; /**< Identity data*/
+        size_t len; /**< Identity length*/
+    } id; /**< ZMQ Identity*/
 
     union {
         struct {
