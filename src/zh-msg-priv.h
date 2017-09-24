@@ -43,16 +43,18 @@ struct zh_msg {
         size_t len; /**< Identity length*/
     } id; /**< ZMQ Identity*/
 
+    void * socket; /**< 0MQ Socket*/
+
     union {
         struct {
             struct zh_msg_data method, /**< HTTP Method */
                                url,    /**< HTTP Url */
-                               httpv,  /**< HTTP Version */
-                               header; /**< HTTP Header */
+                               httpv;  /**< HTTP Version */
         } req; /**< Request specific data*/
     } priv; /**< Fields for message type specific data*/
 
-    struct zh_msg_data body;   /**< HTTP Body */
+    struct zh_msg_data header, /**< HTTP Header */
+                       body;   /**< HTTP Body */
 
     struct {
         void * data; /**< Data Reference */
@@ -60,5 +62,22 @@ struct zh_msg {
         size_t total_len; /**< Total allocated length*/
     } raw; /**< Raw data segment */
 };
+
+/**
+ * Get a request message from raw data
+ *
+ * @param socket    0mq socket
+ * @param id        0mq id (probably received from the socket)
+ * @param id_len    Length of ID
+ * @param data      Data to be interpreted as request
+ * @param data_len  Length of data
+ */
+zh_msg_t * __zh_msg_req_from_data(void * socket, const void * id, size_t id_len, const void * data, size_t data_len);
+
+/**
+ * memmem replacement
+ */
+void * __zh_memmem(const void * hay, size_t hay_len, const void * need, size_t need_len);
+
 
 #endif

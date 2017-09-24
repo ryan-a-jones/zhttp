@@ -6,6 +6,24 @@
 #include "zh-msg-priv.h"
 
 /**
+ *Test the memmem replacement function
+ */
+
+static void test_zh_memmem()
+{
+    void * ret;
+
+    assert(!memcmp("\r\n", "\r\n", 2));
+
+    assert((ret = __zh_memmem("abcdef", 6, "cd", 2)));
+    assert(!memcmp(ret, "cd", 2));
+
+    const char crlfstr[] = "strwith\r\ncrlf";
+    assert(sizeof(crlfstr) == 14);
+    assert((ret = __zh_memmem(crlfstr, sizeof(crlfstr), ZH_CRLF, ZH_CRLF_LEN)));
+}
+
+/**
  * Test message construction of zh_msg_req_str()
  */
 static void test_zh_msg_req_str()
@@ -13,7 +31,7 @@ static void test_zh_msg_req_str()
     void * ctx, * sock;
     zh_msg_t * msg;
 
-	/*Set up 0mq*/
+    /*Set up 0mq*/
     assert(ctx = zmq_ctx_new());
     assert(sock = zhttp_socket(ctx));
     assert(!zmq_connect(sock, "inproc://test_zh_msg_req_str"));
@@ -46,13 +64,14 @@ static void test_zh_msg_req()
     void * ctx, * sock;
     zh_msg_t * msg;
 
-	/*Set up 0mq*/
+    /*Set up 0mq*/
     assert(ctx = zmq_ctx_new());
     assert(sock = zhttp_socket(ctx));
     assert(!zmq_connect(sock, "inproc://test_zh_msg_req_str"));
 
     /*Valid input with standard method*/
     assert((msg = zh_msg_req(sock, ZH_GET, "/this/url")));
+    assert(msg->socket == sock);
     assert(ZH_MSG_REQ == zh_msg_get_type(msg));
     assert(!memcmp("GET", msg->priv.req.method.data, msg->priv.req.method.len));
     assert(zh_msg_req_get_method(msg) == ZH_GET);
@@ -65,10 +84,63 @@ static void test_zh_msg_req()
     zmq_ctx_term(ctx);
 }
 
+/**
+ * Test request from data
+ */
+static void test_zh_msg_req_from_data()
+{
+    zh_msg_t * msg = NULL;
+
+    /*Test malformed data*/
+    msg = __zh_msg_req_from_data((void *) 1, "MYID", 4, "MYDATA", 6);
+    assert(!msg);
+    zh_msg_free(msg);
+
+    const char reqdata[] =
+            "GET /some/url HTTP/0.9\r\n"
+            "Some-Header:Value\r\n"
+            "Another-Header:Something\r\n"
+            "\r\n"
+            "Payload Data"
+            ;
+
+    /*Test good data*/
+    msg = __zh_msg_req_from_data((void *) 1, "MYID2", 5, reqdata, sizeof(reqdata)-1);
+    assert(msg);
+    assert(msg->socket == (void *) 1);
+    assert(ZH_MSG_REQ == zh_msg_get_type(msg));
+
+    assert(msg->id.len == 5);
+    assert(!memcmp("MYID2", msg->id.data, 5));
+
+    assert(msg->priv.req.method.len == 3);
+    assert(!memcmp(msg->priv.req.method.data, "GET", 3));
+    assert(ZH_GET == zh_msg_req_get_method(msg));
+
+    assert(msg->priv.req.url.len == 9);
+    assert(!memcmp(msg->priv.req.url.data, "/some/url", 9));
+
+    assert(msg->priv.req.httpv.len == 8);
+    assert(!memcmp(msg->priv.req.httpv.data, "HTTP/0.9", 8));
+
+    assert(msg->header.len == 45);
+    assert(!memcmp(msg->header.data,
+                "Some-Header:Value\r\n"
+                "Another-Header:Something\r\n",
+                45));
+
+    assert(msg->body.len == 12);
+    assert(!memcmp(msg->body.data, "Payload Data", 12));
+
+    zh_msg_free(msg);
+}
+
 /*Run Tests*/
 int main(void)
 {
+    test_zh_memmem();
     test_zh_msg_req();
     test_zh_msg_req_str();
+    test_zh_msg_req_from_data();
     return 0;
 }
