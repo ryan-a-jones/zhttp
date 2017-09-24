@@ -209,6 +209,7 @@ zh_msg_t * __zh_msg_req_from_data(void * socket, const void * id, size_t id_len,
     msg->header.data = seg_start;
     msg->header.len = seg_end - seg_start;
 
+    /*Get Body Data*/
     seg_start = seg_end + ZH_CRLF_LEN;
     msg->body.data = seg_start;
     msg->body.len = data_end - seg_start;
@@ -231,6 +232,44 @@ void * __zh_memmem(const void * hay, size_t hay_len, const void * need, size_t n
         hay_len--;
     }
 
+    return NULL;
+}
+
+#define MIN_CHUNK_SIZE 5
+
+void * __zh_msg_proc_chunk(const void * data, size_t * data_len)
+{
+    const void * size_begin,
+               * size_end,
+               * data_begin,
+               * data_end;
+
+    if(!(data && data_len && (*data_len>=MIN_CHUNK_SIZE)))
+        goto fail;
+
+    /*Find the size segment*/
+    size_begin = data;
+    size_end = __zh_memmem(size_begin, *data_len, ZH_CRLF, ZH_CRLF_LEN);
+    if(!size_end)
+        goto fail;
+
+    /*Find data segment*/
+    data_begin = size_end + ZH_CRLF_LEN;
+    if(data_begin >= (data + *data_len))
+        goto fail;
+    data_end = data + (*data_len - ZH_CRLF_LEN);
+    if(memcmp(data_end, ZH_CRLF, ZH_CRLF_LEN))
+        goto fail;
+
+    *data_len = (data_end - data_begin);
+
+    /*TODO :We really should verify that the data length*/
+    /*is correct here...*/
+
+    return (void *) data_begin;
+
+fail :
+    *data_len = 0;
     return NULL;
 }
 

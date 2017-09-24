@@ -34,7 +34,6 @@
  *  - zh_msg_t          : Message handle                            *
  *  - zh_msg_type_t     : Enumerated types for messages             *
  *  - zh_msg_get_type() : Get the zh_msg_type_t of the message      *
- *  - zh_msg_raw()      : Create a handle from raw data             *
  *  - zh_msg_free()     : Free a message handle                     *
  *                                                                  *
  * SYMBOLS FOR REQUEST MESSAGES (ZH_MSG_REQ)                        *
@@ -66,19 +65,6 @@ typedef enum {
     ZH_MSG_RES,     /**< Response message type*/
     ZH_MSG_CHUNK,   /**< Chunked message type*/
 } zh_msg_type_t;
-
-/**
- * Get a message instance from raw data
- *
- * Free with call to zh_msg_free()
- *
- * @param data  Data buffer to be converted to zh_msg
- * @param len   Length of data buffer
- * @param hint  The type of message to create. If the message
- *              type is completely unknown, ZHTTP will try to
- *              infer this value when hint is set to ZH_MSG_UNKNOWN
- */
-zh_msg_t * zh_msg_raw(void * data, size_t len, zh_msg_type_t hint);
 
 /**
  * Get message type of a message
@@ -161,6 +147,7 @@ zh_msg_t * zh_msg_req_strn( void * zsock,
  *          is unknown, ZH_UNKNOWN_METHOD is returned.
  */
 zh_method_t zh_msg_req_get_method(const zh_msg_t * msg);
+
 
 /**
  * Instantiate a response message to a request message

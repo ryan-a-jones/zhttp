@@ -135,6 +135,32 @@ static void test_zh_msg_req_from_data()
     zh_msg_free(msg);
 }
 
+/*
+ *Tests chunk processing
+ */
+static void test_zh_msg_proc_chunk()
+{
+    void * ret;
+
+    const char chunk[] =
+        "F\r\n"
+        "-fifteen bytes-\r\n"
+        ;
+    size_t chunk_len = sizeof(chunk) - 1;
+
+    ret = __zh_msg_proc_chunk(chunk, &chunk_len);
+    assert(ret);
+    assert(chunk_len == 15);
+    assert(!memcmp(ret, "-fifteen bytes-", 15));
+
+    const char badchunk[] =
+        "1ffThisisnotvalid\r\n";
+    chunk_len = sizeof(badchunk) - 1;
+    ret = __zh_msg_proc_chunk(badchunk, &chunk_len);
+    assert(!ret);
+
+}
+
 /*Run Tests*/
 int main(void)
 {
@@ -142,5 +168,6 @@ int main(void)
     test_zh_msg_req();
     test_zh_msg_req_str();
     test_zh_msg_req_from_data();
+    test_zh_msg_proc_chunk();
     return 0;
 }

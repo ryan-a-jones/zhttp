@@ -75,6 +75,17 @@ struct zh_msg {
 zh_msg_t * __zh_msg_req_from_data(void * socket, const void * id, size_t id_len, const void * data, size_t data_len);
 
 /**
+ * Process an HTTP chunk
+ *
+ * @param data      Data to parse
+ * @param data_len  Length of data to parse. The length is over-written
+ *                  with the length of data within the chunk
+ *
+ * @returns Pointer to data within chunk or NULL on failure
+ */
+void * __zh_msg_proc_chunk(const void * data, size_t * data_len);
+
+/**
  * memmem replacement
  */
 void * __zh_memmem(const void * hay, size_t hay_len, const void * need, size_t need_len);
