@@ -138,6 +138,77 @@ zh_method_t zh_msg_req_get_method(const zh_msg_t * msg)
     return zh_method_from_strn((const char *) msg->priv.req.method.data, msg->priv.req.method.len);
 }
 
+zh_msg_t * zh_msg_res(zh_msg_t * req, int status)
+{
+    return zh_msg_res_str(req, status, __zh_stat_to_str(status));
+}
+
+zh_msg_t * zh_msg_res_str(zh_msg_t * req, int stat, const char * stat_msg)
+{
+    return zh_msg_res_strn(req, stat, stat_msg, strlen(stat_msg));
+}
+
+zh_msg_t * zh_msg_res_strn(zh_msg_t * req, int stat, const char * stat_msg, size_t stat_msg_len)
+{
+    zh_msg_t * res = NULL;
+
+    size_t msg_size;
+
+    (void) stat;
+    (void) stat_msg;
+    (void) stat_msg_len;
+
+    if(!req)
+        goto fail;
+
+    if(!(res = __msg_new(ZH_MSG_INIT_SIZE)))
+        goto fail;
+
+    /*Copy message ID*/
+    memcpy(res->id.data, req->id.data, req->id.len);
+    res->id.len = req->id.len;
+
+    res->type = ZH_MSG_RES;
+
+    msg_size = stat_msg_len + sizeof(ZH_HTTP) + 8;
+    if(__msg_data_increase_by(res, msg_size))
+        goto fail;
+
+    /*Set HTTP Version*/
+    res->priv.res.httpv.data = memcpy(res->raw.data, ZH_HTTP, sizeof(ZH_HTTP)-1);
+    res->priv.res.httpv.len = sizeof(ZH_HTTP)-1;
+
+    /*Add white space*/
+    res->priv.res.stat.data = res->raw.data + res->priv.res.httpv.len;
+    *((char *)res->priv.res.stat.data) = ' ';
+    res->priv.res.stat.data++;
+
+    /*Add status code*/
+    sprintf(res->priv.res.stat.data, "%.*u ", 3, (unsigned int) stat);
+    res->priv.res.stat.len = 3;
+
+    /*Add status message*/
+    res->priv.res.stat_msg.data = res->priv.res.stat.data + 4;
+    memcpy(res->priv.res.stat_msg.data, stat_msg, stat_msg_len);
+    res->priv.res.stat_msg.len = stat_msg_len;
+
+    /*Add CRLF*/
+    memcpy(res->priv.res.stat_msg.data + stat_msg_len, ZH_CRLF ZH_CRLF, 2 * ZH_CRLF_LEN);
+
+    /*Init header*/
+    res->header.data = res->priv.res.stat_msg.data + stat_msg_len + ZH_CRLF_LEN;
+
+    /*Init body*/
+    res->body.data = res->header.data + ZH_CRLF_LEN;
+
+    return res;
+
+fail :
+    __msg_free(res);
+    return NULL;
+}
+
+
 /********************************************************************************
  *                         PROTECTED FUNCTIONS                                  *
  *******************************************************************************/
@@ -271,6 +342,12 @@ void * __zh_msg_proc_chunk(const void * data, size_t * data_len)
 fail :
     *data_len = 0;
     return NULL;
+}
+
+const char * __zh_stat_to_str(int status)
+{
+    (void) status;
+    return "OK";
 }
 
 /********************************************************************************

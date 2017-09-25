@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -161,6 +162,52 @@ static void test_zh_msg_proc_chunk()
 
 }
 
+/*
+ * Test response message string
+ */
+static void test_zh_stat_to_str()
+{
+    const char * stat_str;
+
+    stat_str = __zh_stat_to_str(200);
+    assert(0==strcmp(stat_str, "OK"));
+}
+
+/**
+ * Test response message
+ */
+
+static void test_zh_msg_res_str()
+{
+    zh_msg_t * req, * res;
+
+    assert((req = calloc(1, sizeof(zh_msg_t))));
+    memcpy(req->id.data, "1234", 4);
+    req->id.len = 4;
+
+    assert((res = zh_msg_res_str(req, 404, "Not Found")));
+    assert(ZH_MSG_RES == zh_msg_get_type(res));
+
+    assert(res->id.len == 4);
+    assert(!memcmp(res->id.data, "1234", 4));
+
+    assert(res->priv.res.httpv.len == sizeof(ZH_HTTP)-1);
+    assert(!memcmp(ZH_HTTP, res->priv.res.httpv.data, sizeof(ZH_HTTP)-1));
+
+    assert(res->priv.res.stat.len == 3);
+    assert(!memcmp("404", res->priv.res.stat.data, 3));
+
+    assert(res->priv.res.stat_msg.len == 9);
+    assert(!memcmp("Not Found", res->priv.res.stat_msg.data, 9));
+
+    assert(res->raw.len == 26);
+    assert(!memcmp("HTTP/1.1 404 Not Found\r\n\r\n", res->raw.data, 26));
+
+    zh_msg_free(res);
+
+    free(req);
+}
+
 /*Run Tests*/
 int main(void)
 {
@@ -169,5 +216,7 @@ int main(void)
     test_zh_msg_req_str();
     test_zh_msg_req_from_data();
     test_zh_msg_proc_chunk();
+    test_zh_stat_to_str();
+    test_zh_msg_res_str();
     return 0;
 }

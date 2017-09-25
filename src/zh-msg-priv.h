@@ -30,7 +30,7 @@
  * Message Word String
  */
 struct zh_msg_data {
-    const void * data; /**< Reference String Start */
+    void * data; /**< Reference String Start */
     size_t len;  /**< Reference String Length */
 };
 
@@ -51,6 +51,11 @@ struct zh_msg {
                                url,    /**< HTTP Url */
                                httpv;  /**< HTTP Version */
         } req; /**< Request specific data*/
+        struct {
+            struct zh_msg_data httpv,   /**< HTTP Version*/
+                               stat,    /**< Status Code*/
+                               stat_msg;/**< Status message string*/
+        } res;
     } priv; /**< Fields for message type specific data*/
 
     struct zh_msg_data header, /**< HTTP Header */
@@ -89,6 +94,11 @@ void * __zh_msg_proc_chunk(const void * data, size_t * data_len);
  * memmem replacement
  */
 void * __zh_memmem(const void * hay, size_t hay_len, const void * need, size_t need_len);
+
+/**
+ * Get the response string for a status
+ */
+const char * __zh_stat_to_str(int status);
 
 
 #endif

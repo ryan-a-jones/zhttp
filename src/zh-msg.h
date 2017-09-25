@@ -148,7 +148,6 @@ zh_msg_t * zh_msg_req_strn( void * zsock,
  */
 zh_method_t zh_msg_req_get_method(const zh_msg_t * msg);
 
-
 /**
  * Instantiate a response message to a request message
  *
@@ -156,5 +155,28 @@ zh_method_t zh_msg_req_get_method(const zh_msg_t * msg);
  * @param status    Status Code
  */
 zh_msg_t * zh_msg_res(zh_msg_t * req, int status);
+
+/**
+ * Instantiate a response message to a request message
+ *
+ * @param req       Request message to respond to
+ * @param stat      Status code (i.e. 200)
+ * @param stat_msg  Status message (i.e. OK)
+ * @returns zh_msg_t request instance or NULL if memory allocation
+ *          failure occurs.
+ */
+zh_msg_t * zh_msg_res_str(zh_msg_t * req, int stat, const char * stat_msg);
+
+/**
+ * Instantiate a response message to a request message
+ *
+ * @param req           Request message to respond to
+ * @param stat          Status code (i.e. 200)
+ * @param stat_msg      Status message (i.e. OK)
+ * @param stat_msg_len  Length of Status message
+ * @returns zh_msg_t request instance or NULL if memory allocation
+ *          failure occurs.
+ */
+zh_msg_t * zh_msg_res_strn(zh_msg_t * req, int stat, const char * stat_msg, size_t stat_msg_len);
 
 #endif
