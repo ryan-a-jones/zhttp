@@ -269,10 +269,6 @@ zh_msg_t * zh_msg_res_strn(zh_msg_t * req, int stat, const char * stat_msg, size
 
     size_t msg_size;
 
-    (void) stat;
-    (void) stat_msg;
-    (void) stat_msg_len;
-
     if(!req)
         goto fail;
 
@@ -353,6 +349,49 @@ void zh_msg_iter_header(zh_msg_t * msg, zh_msg_iter_header_fun_t cb, void * data
         head_start = val_end + ZH_CRLF_LEN;
     }
 }
+const void * zh_msg_get_header_str(zh_msg_t * msg, const char * header, size_t * val_len)
+{
+    return zh_msg_get_header_strn(msg, header, strlen(header), val_len);
+}
+
+struct _get_head {
+    struct {
+        const void * data;
+        size_t len;
+    } key, val;
+};
+
+static void _get_header_iterator(void * data, const void * key, size_t key_len,
+                                     const void * val, size_t val_len)
+{
+    struct _get_head * req = data;
+
+    /*Exit if we have already found it*/
+    if(req->val.data)
+        return;
+
+    /*Compare keys - return on failure*/
+    if((req->key.len != key_len) || memcmp(key, req->key.data, key_len))
+        return;
+
+    req->val.data = val;
+    req->val.len = val_len;
+}
+
+const void * zh_msg_get_header_strn(zh_msg_t * msg, const void * header, size_t header_len,
+                                    size_t * val_len)
+{
+    struct _get_head data = {
+        {header, header_len},
+        {NULL, 0}
+    };
+
+    zh_msg_iter_header(msg, _get_header_iterator, &data);
+
+    *val_len = data.val.len;
+    return data.val.data;
+}
+
 
 /********************************************************************************
  *                         PROTECTED FUNCTIONS                                  *

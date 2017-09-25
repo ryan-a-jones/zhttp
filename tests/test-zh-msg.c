@@ -414,6 +414,49 @@ static void test_zh_msg_iter_header()
     free(req);
 }
 
+/*
+ * Test finding headers
+ */
+static void test_zh_msg_get_header_str()
+{
+    zh_msg_t * req, * res;
+    size_t i;
+    const char * key, * val;
+
+    const void  * ret;
+    size_t ret_len;
+
+    assert((req = calloc(1, sizeof(zh_msg_t))));
+    memcpy(req->id.data, "1234", 4);
+    req->id.len = 4;
+
+    assert((res = zh_msg_res(req, 200)));
+    assert(!zh_msg_put_body(res, "Body Data", 9));
+
+    /*Insert headers*/
+    for(i=0; i<iter_headers_size; i++){
+        key = iter_headers[i].header;
+        val = iter_headers[i].value;
+        assert(!zh_msg_put_header_str(res, key, val));
+    }
+
+    /*Try to find each header*/
+    for(i=iter_headers_size; i>0; i--){
+        key = iter_headers[i-1].header;
+        val = iter_headers[i-1].value;
+        assert((ret = zh_msg_get_header_str(res, key, &ret_len)));
+        assert(ret_len == strlen(val));
+        assert(!memcmp(ret, val, ret_len));
+    }
+
+    /*Test header that should not exist*/
+    assert(!zh_msg_get_header_str(res, "NotAValidKey",&ret_len));
+    assert(!ret_len);
+
+    zh_msg_free(res);
+    free(req);
+}
+
 /*Run Tests*/
 int main(void)
 {
@@ -427,5 +470,6 @@ int main(void)
     test_zh_msg_put_body();
     test_zh_msg_put_header();
     test_zh_msg_iter_header();
+    test_zh_msg_get_header_str();
     return 0;
 }

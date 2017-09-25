@@ -40,6 +40,8 @@
  *  - zh_msg_put_header_str()                                       *
  *  - zh_msg_put_header_strn() : Add a header field to a message    *
  *  - zh_msg_iter_header() : Iterate through headers                *
+ *  - zh_msg_get_header_str()                                       *
+ *    zh_msg_get_header_strn() : Get header by string               *
  *  - zh_msg_free()     : Free a message handle                     *
  *                                                                  *
  * SYMBOLS FOR REQUEST MESSAGES (ZH_MSG_REQ)                        *
@@ -167,6 +169,32 @@ typedef void (*zh_msg_iter_header_fun_t)(void * data, const void * header, size_
  * @param   data        User-Defined Data passed to cb
  */
 void zh_msg_iter_header(zh_msg_t * msg, zh_msg_iter_header_fun_t cb, void * data);
+
+/**
+ * Get the value of a header
+ *
+ * @param   msg         ZHTTP message instance
+ * @param   header      the header key to search for (NULL-terminated)
+ * @param   val_len     size of the return buffer
+ *
+ * @returns The header value or NULL if not found. This value
+ *          is a buffer of length val_len and may not be modified
+ */
+const void * zh_msg_get_header_str(zh_msg_t * msg, const char * header, size_t * val_len);
+
+/**
+ * Get the value of a header
+ *
+ * @param   msg         ZHTTP message instance
+ * @param   val_len     size of the return buffer
+ * @param   header      the header key to search for
+ * @param   header_len  the length of header
+ *
+ * @returns The header value or NULL if not found. This value
+ *          is a buffer of length val_len and may not be modified
+ */
+const void * zh_msg_get_header_strn(zh_msg_t * msg, const void * header, size_t header_len,
+                                    size_t * val_len);
 
 /**
  * Free a ZHTTP Message
