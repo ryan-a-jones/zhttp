@@ -34,6 +34,8 @@
  *  - zh_msg_t          : Message handle                            *
  *  - zh_msg_type_t     : Enumerated types for messages             *
  *  - zh_msg_get_type() : Get the zh_msg_type_t of the message      *
+ *  - zh_msg_prop_t     : Enumerated message property types         *
+ *  - zh_msg_get_prop() : Get a property of a message               *
  *  - zh_msg_free()     : Free a message handle                     *
  *                                                                  *
  * SYMBOLS FOR REQUEST MESSAGES (ZH_MSG_REQ)                        *
@@ -60,10 +62,9 @@ typedef struct zh_msg zh_msg_t;
  * Message Request Type
  */
 typedef enum {
-    ZH_MSG_UNKNOWN = -1, /**< Unknown message type*/
+    ZH_MSG_UNKNOWN, /**< Unknown message type*/
     ZH_MSG_REQ,     /**< Request message type*/
     ZH_MSG_RES,     /**< Response message type*/
-    ZH_MSG_CHUNK,   /**< Chunked message type*/
 } zh_msg_type_t;
 
 /**
@@ -74,6 +75,35 @@ typedef enum {
  *          if the type is not known.
  */
 zh_msg_type_t zh_msg_get_type(const zh_msg_t * msg);
+
+/**
+ * Message Property Type
+ */
+typedef enum {
+    ZH_MSG_REQ_METHOD, /**< Request method*/
+    ZH_MSG_REQ_URL,    /**< Request URL*/
+    ZH_MSG_REQ_HTTPV,  /**< Request HTTP Version*/
+    ZH_MSG_RES_HTTPV,  /**< Response HTTP Version*/
+    ZH_MSG_RES_STAT,   /**< Response Status String */
+    ZH_MSG_RES_STAT_MSG, /**< Response Status Message*/
+    ZH_MSG_HEADER, /**< Message header*/
+    ZH_MSG_BODY,   /**< Message body*/
+    ZH_MSG_RAW,    /**< Message raw data*/
+    ZH_MSG_ID,     /**< 0MQ ID*/
+} zh_msg_prop_t;
+
+/**
+ * Get property of message
+ *
+ * @param   msg         ZHTTP message instance
+ * @param   prop        Property type
+ * @param   prop_len    Length of property size
+ *
+ * @returns Message property or NULL if property is invalid.
+ *          This value may NOT be modified. The size of this
+ *          data is set in the prop_len variable.
+ */
+const void * zh_msg_get_prop(zh_msg_t * msg, zh_msg_prop_t prop, size_t * prop_len);
 
 /**
  * Free a ZHTTP Message

@@ -45,6 +45,65 @@ zh_msg_type_t zh_msg_get_type(const zh_msg_t * msg)
     return (msg)? msg->type : ZH_MSG_UNKNOWN;
 }
 
+const void * zh_msg_get_prop(zh_msg_t * msg, zh_msg_prop_t prop, size_t * prop_len)
+{
+    /*Message type specific switches*/
+    switch(msg->type){
+        case ZH_MSG_REQ :
+            switch(prop){
+                case ZH_MSG_REQ_METHOD :
+                    *prop_len = msg->priv.req.method.len;
+                    return msg->priv.req.method.data;
+                case ZH_MSG_REQ_URL :
+                    *prop_len = msg->priv.req.url.len;
+                    return msg->priv.req.url.data;
+                case ZH_MSG_REQ_HTTPV :
+                    *prop_len = msg->priv.req.httpv.len;
+                    return msg->priv.req.httpv.data;
+                default :
+                    break;
+            }
+            break;
+        case ZH_MSG_RES :
+            switch(prop){
+                case ZH_MSG_RES_HTTPV :
+                    *prop_len = msg->priv.res.httpv.len;
+                    return msg->priv.res.httpv.data;
+                case ZH_MSG_RES_STAT :
+                    *prop_len = msg->priv.res.stat.len;
+                    return msg->priv.res.stat.data;
+                case ZH_MSG_RES_STAT_MSG :
+                    *prop_len = msg->priv.res.stat_msg.len;
+                    return msg->priv.res.stat_msg.data;
+                default :
+                    break;
+            }
+            break;
+        default :
+            break;
+    }
+
+    /*Common message properties*/
+    switch(prop){
+        case ZH_MSG_HEADER :
+            *prop_len = msg->header.len;
+            return msg->header.data;
+        case ZH_MSG_BODY :
+            *prop_len = msg->body.len;
+            return msg->body.data;
+        case ZH_MSG_RAW :
+            *prop_len = msg->raw.len;
+            return msg->raw.data;
+        case ZH_MSG_ID :
+            *prop_len = msg->id.len;
+            return msg->id.data;
+        default :
+            break;
+    }
+
+    return NULL;
+}
+
 void zh_msg_free(zh_msg_t * msg)
 {
     __msg_free(msg);
@@ -222,6 +281,8 @@ zh_msg_t * __zh_msg_req_from_data(void * socket, const void * id, size_t id_len,
 
     if(!(msg = __msg_new(data_len)))
         goto fail;
+
+    msg->type = ZH_MSG_REQ;
 
     msg->socket = socket;
 

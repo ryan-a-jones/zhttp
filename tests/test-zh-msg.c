@@ -31,6 +31,8 @@ static void test_zh_msg_req_str()
 {
     void * ctx, * sock;
     zh_msg_t * msg;
+    const void * prop;
+    size_t prop_len;
 
     /*Set up 0mq*/
     assert(ctx = zmq_ctx_new());
@@ -40,10 +42,19 @@ static void test_zh_msg_req_str()
     /*Valid input with non-standard method*/
     assert((msg = zh_msg_req_str(sock, "AMETHOD", "/a/url", "HTTP/0.8")));
     assert(ZH_MSG_REQ == zh_msg_get_type(msg));
-    assert(!memcmp("AMETHOD", msg->priv.req.method.data, msg->priv.req.method.len));
-    assert(!memcmp("/a/url", msg->priv.req.url.data, msg->priv.req.url.len));
-    assert(!memcmp("HTTP/0.8", msg->priv.req.httpv.data, msg->priv.req.httpv.len));
-    assert(!memcmp("AMETHOD /a/url HTTP/0.8\r\n\r\n", msg->raw.data, msg->raw.len));
+
+    assert((prop = zh_msg_get_prop(msg, ZH_MSG_REQ_METHOD, &prop_len)));
+    assert(!memcmp("AMETHOD", prop, prop_len));
+
+    assert((prop = zh_msg_get_prop(msg, ZH_MSG_REQ_URL, &prop_len)));
+    assert(!memcmp("/a/url", prop, prop_len));
+
+    assert((prop = zh_msg_get_prop(msg, ZH_MSG_REQ_HTTPV, &prop_len)));
+    assert(!memcmp("HTTP/0.8", prop, prop_len));
+
+    assert((prop = zh_msg_get_prop(msg, ZH_MSG_RAW, &prop_len)));
+    assert(!memcmp("AMETHOD /a/url HTTP/0.8\r\n\r\n", prop, prop_len));
+
     assert(zh_msg_req_get_method(msg) == ZH_UNKNOWN_METHOD);
     zh_msg_free(msg);
 
@@ -64,6 +75,8 @@ static void test_zh_msg_req()
 {
     void * ctx, * sock;
     zh_msg_t * msg;
+    const void * prop;
+    size_t prop_len;
 
     /*Set up 0mq*/
     assert(ctx = zmq_ctx_new());
@@ -74,11 +87,19 @@ static void test_zh_msg_req()
     assert((msg = zh_msg_req(sock, ZH_GET, "/this/url")));
     assert(msg->socket == sock);
     assert(ZH_MSG_REQ == zh_msg_get_type(msg));
-    assert(!memcmp("GET", msg->priv.req.method.data, msg->priv.req.method.len));
     assert(zh_msg_req_get_method(msg) == ZH_GET);
-    assert(!memcmp("/this/url", msg->priv.req.url.data, msg->priv.req.url.len));
-    assert(!memcmp("HTTP/1.1", msg->priv.req.httpv.data, msg->priv.req.httpv.len));
-    assert(!memcmp("GET /this/url HTTP/1.1\r\n\r\n", msg->raw.data, msg->raw.len));
+
+    assert((prop = zh_msg_get_prop(msg, ZH_MSG_REQ_METHOD, &prop_len)));
+    assert(!memcmp("GET", prop, prop_len));
+
+    assert((prop = zh_msg_get_prop(msg, ZH_MSG_REQ_URL, &prop_len)));
+    assert(!memcmp("/this/url", prop, prop_len));
+
+    assert((prop = zh_msg_get_prop(msg, ZH_MSG_REQ_HTTPV, &prop_len)));
+    assert(!memcmp("HTTP/1.1", prop, prop_len));
+
+    assert((prop = zh_msg_get_prop(msg, ZH_MSG_RAW, &prop_len)));
+    assert(!memcmp("GET /this/url HTTP/1.1\r\n\r\n", prop, prop_len));
     zh_msg_free(msg);
 
     zmq_close(sock);
@@ -91,6 +112,8 @@ static void test_zh_msg_req()
 static void test_zh_msg_req_from_data()
 {
     zh_msg_t * msg = NULL;
+    const void * prop;
+    size_t prop_len;
 
     /*Test malformed data*/
     msg = __zh_msg_req_from_data((void *) 1, "MYID", 4, "MYDATA", 6);
@@ -111,27 +134,34 @@ static void test_zh_msg_req_from_data()
     assert(msg->socket == (void *) 1);
     assert(ZH_MSG_REQ == zh_msg_get_type(msg));
 
-    assert(msg->id.len == 5);
-    assert(!memcmp("MYID2", msg->id.data, 5));
+    assert((prop=zh_msg_get_prop(msg, ZH_MSG_ID, &prop_len)));
+    assert(prop_len == 5);
+    assert(!memcmp("MYID2", prop, 5));
 
-    assert(msg->priv.req.method.len == 3);
-    assert(!memcmp(msg->priv.req.method.data, "GET", 3));
+    assert((prop=zh_msg_get_prop(msg, ZH_MSG_REQ_METHOD, &prop_len)));
+    assert(prop_len == 3);
+    assert(!memcmp(prop, "GET", 3));
+
     assert(ZH_GET == zh_msg_req_get_method(msg));
 
-    assert(msg->priv.req.url.len == 9);
-    assert(!memcmp(msg->priv.req.url.data, "/some/url", 9));
+    assert((prop=zh_msg_get_prop(msg, ZH_MSG_REQ_URL, &prop_len)));
+    assert(prop_len == 9);
+    assert(!memcmp(prop, "/some/url", 9));
 
-    assert(msg->priv.req.httpv.len == 8);
-    assert(!memcmp(msg->priv.req.httpv.data, "HTTP/0.9", 8));
+    assert((prop=zh_msg_get_prop(msg, ZH_MSG_REQ_HTTPV, &prop_len)));
+    assert(prop_len == 8);
+    assert(!memcmp(prop, "HTTP/0.9", 8));
 
-    assert(msg->header.len == 45);
-    assert(!memcmp(msg->header.data,
+    assert((prop=zh_msg_get_prop(msg, ZH_MSG_HEADER, &prop_len)));
+    assert(prop_len == 45);
+    assert(!memcmp(prop,
                 "Some-Header:Value\r\n"
                 "Another-Header:Something\r\n",
                 45));
 
-    assert(msg->body.len == 12);
-    assert(!memcmp(msg->body.data, "Payload Data", 12));
+    assert((prop=zh_msg_get_prop(msg, ZH_MSG_BODY, &prop_len)));
+    assert(prop_len == 12);
+    assert(!memcmp(prop, "Payload Data", 12));
 
     zh_msg_free(msg);
 }
@@ -181,6 +211,9 @@ static void test_zh_msg_res_str()
 {
     zh_msg_t * req, * res;
 
+    const void * prop;
+    size_t prop_len;
+
     assert((req = calloc(1, sizeof(zh_msg_t))));
     memcpy(req->id.data, "1234", 4);
     req->id.len = 4;
@@ -188,20 +221,25 @@ static void test_zh_msg_res_str()
     assert((res = zh_msg_res_str(req, 404, "Not Found")));
     assert(ZH_MSG_RES == zh_msg_get_type(res));
 
-    assert(res->id.len == 4);
-    assert(!memcmp(res->id.data, "1234", 4));
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_ID, &prop_len)));
+    assert(prop_len == 4);
+    assert(!memcmp(prop, "1234", 4));
 
-    assert(res->priv.res.httpv.len == sizeof(ZH_HTTP)-1);
-    assert(!memcmp(ZH_HTTP, res->priv.res.httpv.data, sizeof(ZH_HTTP)-1));
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_RES_HTTPV, &prop_len)));
+    assert(prop_len == sizeof(ZH_HTTP)-1);
+    assert(!memcmp(ZH_HTTP, prop, prop_len));
 
-    assert(res->priv.res.stat.len == 3);
-    assert(!memcmp("404", res->priv.res.stat.data, 3));
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_RES_STAT, &prop_len)));
+    assert(prop_len == 3);
+    assert(!memcmp("404", prop, 3));
 
-    assert(res->priv.res.stat_msg.len == 9);
-    assert(!memcmp("Not Found", res->priv.res.stat_msg.data, 9));
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_RES_STAT_MSG, &prop_len)));
+    assert(prop_len == 9);
+    assert(!memcmp("Not Found", prop, 9));
 
-    assert(res->raw.len == 26);
-    assert(!memcmp("HTTP/1.1 404 Not Found\r\n\r\n", res->raw.data, 26));
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_RAW, &prop_len)));
+    assert(prop_len == 26);
+    assert(!memcmp("HTTP/1.1 404 Not Found\r\n\r\n", prop, 26));
 
     zh_msg_free(res);
 
