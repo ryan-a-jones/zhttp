@@ -246,6 +246,9 @@ static void test_zh_msg_res_str()
     free(req);
 }
 
+/*
+ *Test appending message into body
+ */
 static void test_zh_msg_put_body()
 {
     zh_msg_t * req, * res;
@@ -261,7 +264,7 @@ static void test_zh_msg_put_body()
 
     assert((res = zh_msg_res(req, 200)));
 
-    assert(!zh_msg_put_body(res, body, sizeof(body)-1));
+    assert(!zh_msg_put_body(res, body, body_len));
 
     assert((prop = zh_msg_get_prop(res, ZH_MSG_BODY, &prop_len)));
     assert(prop_len == body_len);
@@ -278,6 +281,76 @@ static void test_zh_msg_put_body()
     free(req);
 }
 
+/*
+ * Test putting header into message
+ */
+static void test_zh_msg_put_header()
+{
+    zh_msg_t * req, * res;
+
+    const void * prop;
+    size_t prop_len;
+    const char body[] = "Some Body Data";
+    size_t body_len = sizeof(body) - 1;
+
+    assert((req = calloc(1, sizeof(zh_msg_t))));
+    memcpy(req->id.data, "1234", 4);
+    req->id.len = 4;
+
+    assert((res = zh_msg_res(req, 200)));
+    assert(!zh_msg_put_body(res, body, body_len));
+
+    /*Add a header*/
+    assert(!zh_msg_put_header_str(res, "MyHeader", "MyValue"));
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_HEADER, &prop_len)));
+    assert(prop_len == 18);
+    assert(!memcmp("MyHeader:MyValue\r\n", prop, prop_len));
+
+    /*Check integrity of body*/
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_BODY, &prop_len)));
+    assert(prop_len == body_len);
+    assert(!memcmp(prop, body, body_len));
+
+    /*Verify raw output*/
+    const char expected_raw[] =
+        ZH_HTTP " 200 OK\r\n"
+        "MyHeader:MyValue\r\n"
+        "\r\n"
+        "Some Body Data"
+        ;
+    size_t expected_raw_len = sizeof(expected_raw) - 1;
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_RAW, &prop_len)));
+    assert(prop_len == expected_raw_len);
+    assert(!memcmp(expected_raw, prop, prop_len));
+
+    /*Add another header*/
+    assert(!zh_msg_put_header_str(res, "MyHead2", "MyVal2"));
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_HEADER, &prop_len)));
+    assert(prop_len == (18+16));
+    assert(!memcmp("MyHeader:MyValue\r\nMyHead2:MyVal2\r\n", prop, prop_len));
+
+    /*Check integrity of body*/
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_BODY, &prop_len)));
+    assert(prop_len == body_len);
+    assert(!memcmp(prop, body, body_len));
+
+    /*Verify raw output*/
+    const char expected_raw2[] =
+        ZH_HTTP " 200 OK\r\n"
+        "MyHeader:MyValue\r\n"
+        "MyHead2:MyVal2\r\n"
+        "\r\n"
+        "Some Body Data"
+        ;
+    size_t expected_raw2_len = sizeof(expected_raw2) - 1;
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_RAW, &prop_len)));
+    assert(prop_len == expected_raw2_len);
+    assert(!memcmp(expected_raw2, prop, prop_len));
+
+    zh_msg_free(res);
+    free(req);
+}
+
 /*Run Tests*/
 int main(void)
 {
@@ -289,5 +362,6 @@ int main(void)
     test_zh_stat_to_str();
     test_zh_msg_res_str();
     test_zh_msg_put_body();
+    test_zh_msg_put_header();
     return 0;
 }

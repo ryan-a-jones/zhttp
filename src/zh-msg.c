@@ -115,6 +115,51 @@ int zh_msg_put_body(zh_msg_t * msg, const void * data, size_t data_len)
     return 0;
 }
 
+int zh_msg_put_header_str(zh_msg_t * msg, const char * header, const char * value)
+{
+    return zh_msg_put_header_strn(msg, header, strlen(header), value, strlen(value));
+}
+
+int zh_msg_put_header_strn(zh_msg_t * msg, const void * header, size_t header_len,
+                                           const void * value, size_t value_len)
+{
+    void * head_ref;
+    size_t mv_data_size, new_header_size;
+
+    if(!msg)
+        return -1;
+
+    head_ref = msg->header.data + msg->header.len; //End of header segment
+    mv_data_size = (msg->raw.data + msg->raw.len) - head_ref; //size of data following headers
+    new_header_size = header_len + value_len + 3; //size of new header
+
+    if(__msg_data_increase_by(msg, new_header_size))
+        return -1;
+
+    /*Move following data segment so new header can be inserted*/
+    memmove(head_ref+new_header_size, head_ref, mv_data_size);
+
+    /*Add header key*/
+    memcpy(head_ref, header, header_len);
+    head_ref += header_len;
+
+    /*Add colon*/
+    *((char*) head_ref++) = ':';
+
+    /*Add header value*/
+    memcpy(head_ref, value, value_len);
+    head_ref += value_len;
+
+    /*Add CRLF*/
+    memcpy(head_ref, ZH_CRLF, ZH_CRLF_LEN);
+
+    msg->header.len += new_header_size;
+
+    msg->body.data += new_header_size;
+
+    return 0;
+}
+
 void zh_msg_free(zh_msg_t * msg)
 {
     __msg_free(msg);

@@ -37,6 +37,8 @@
  *  - zh_msg_prop_t     : Enumerated message property types         *
  *  - zh_msg_get_prop() : Get a property of a message               *
  *  - zh_msg_put_body() : Add body data to a message                *
+ *  - zh_msg_put_header_str()                                       *
+ *  - zh_msg_put_header_strn() : Add a header field to a message    *
  *  - zh_msg_free()     : Free a message handle                     *
  *                                                                  *
  * SYMBOLS FOR REQUEST MESSAGES (ZH_MSG_REQ)                        *
@@ -89,8 +91,6 @@ typedef enum {
     ZH_MSG_RES_STAT_MSG, /**< Response Status Message*/
     ZH_MSG_HEADER, /**< Message header*/
     ZH_MSG_BODY,   /**< Message body*/
-
-
     ZH_MSG_RAW,    /**< Message raw data*/
     ZH_MSG_ID,     /**< 0MQ ID*/
 } zh_msg_prop_t;
@@ -118,6 +118,31 @@ const void * zh_msg_get_prop(zh_msg_t * msg, zh_msg_prop_t prop, size_t * prop_l
  * @return 0 on success, <0 on failure
  */
 int zh_msg_put_body(zh_msg_t * msg, const void * data, size_t data_len);
+
+/**
+ * Append a header to a message
+ *
+ * @param   msg         ZHTTP message instance
+ * @param   header      Message header key (must be NULL-terminated)
+ * @param   value       Value of header key (must be NULL-terminated)
+ *
+ * @return 0 on success, <0 on failure
+ */
+int zh_msg_put_header_str(zh_msg_t * msg, const char * header, const char * value);
+
+/**
+ * Append a header to a message
+ *
+ * @param   msg         ZHTTP message instance
+ * @param   header      Message header key
+ * @param   header_len  Length of header
+ * @param   value       Value of header key
+ * @param   value_len   Length of value
+ *
+ * @return 0 on success, <0 on failure
+ */
+int zh_msg_put_header_strn(zh_msg_t * msg, const void * header, size_t header_len,
+                                           const void * value, size_t value_len);
 
 /**
  * Free a ZHTTP Message
