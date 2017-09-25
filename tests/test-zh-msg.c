@@ -197,10 +197,23 @@ static void test_zh_msg_proc_chunk()
  */
 static void test_zh_stat_to_str()
 {
-    const char * stat_str;
+    /*Test Standard*/
+    assert(0==strcmp(__zh_stat_to_str(100), "Continue"));
+    assert(0==strcmp(__zh_stat_to_str(200), "OK"));
+    assert(0==strcmp(__zh_stat_to_str(304), "Not Modified"));
+    assert(0==strcmp(__zh_stat_to_str(404), "Not Found"));
+    assert(0==strcmp(__zh_stat_to_str(502), "Bad Gateway"));
 
-    stat_str = __zh_stat_to_str(200);
-    assert(0==strcmp(stat_str, "OK"));
+    /*Test Non-Standard*/
+    assert(0==strcmp(__zh_stat_to_str(105), "Information"));
+    assert(0==strcmp(__zh_stat_to_str(272), "Success"));
+    assert(0==strcmp(__zh_stat_to_str(364), "Redirection"));
+    assert(0==strcmp(__zh_stat_to_str(457), "Client Error"));
+    assert(0==strcmp(__zh_stat_to_str(524), "Server Error"));
+
+    /*Test Invalid*/
+    assert(0==strcmp(__zh_stat_to_str(1300), "OK"));
+    assert(0==strcmp(__zh_stat_to_str(13), "OK"));
 }
 
 /**
