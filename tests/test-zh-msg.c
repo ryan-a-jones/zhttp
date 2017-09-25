@@ -246,6 +246,38 @@ static void test_zh_msg_res_str()
     free(req);
 }
 
+static void test_zh_msg_put_body()
+{
+    zh_msg_t * req, * res;
+
+    const void * prop;
+    size_t prop_len;
+    const char body[] = "Some Body Data";
+    size_t body_len = sizeof(body) - 1;
+
+    assert((req = calloc(1, sizeof(zh_msg_t))));
+    memcpy(req->id.data, "1234", 4);
+    req->id.len = 4;
+
+    assert((res = zh_msg_res(req, 200)));
+
+    assert(!zh_msg_put_body(res, body, sizeof(body)-1));
+
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_BODY, &prop_len)));
+    assert(prop_len == body_len);
+    assert(!memcmp(prop, body, prop_len));
+
+    assert(!zh_msg_put_body(res, body, body_len));
+
+    assert((prop = zh_msg_get_prop(res, ZH_MSG_BODY, &prop_len)));
+    assert(prop_len == 2*body_len);
+    assert(!memcmp(prop, body, body_len));
+    assert(!memcmp(prop+body_len, body, body_len));
+
+    zh_msg_free(res);
+    free(req);
+}
+
 /*Run Tests*/
 int main(void)
 {
@@ -256,5 +288,6 @@ int main(void)
     test_zh_msg_proc_chunk();
     test_zh_stat_to_str();
     test_zh_msg_res_str();
+    test_zh_msg_put_body();
     return 0;
 }

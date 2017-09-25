@@ -104,6 +104,17 @@ const void * zh_msg_get_prop(zh_msg_t * msg, zh_msg_prop_t prop, size_t * prop_l
     return NULL;
 }
 
+int zh_msg_put_body(zh_msg_t * msg, const void * data, size_t data_len)
+{
+    if(__msg_data_increase_by(msg, data_len))
+        return -1;
+
+    memcpy(msg->body.data + msg->body.len, data, data_len);
+    msg->body.len += data_len;
+
+    return 0;
+}
+
 void zh_msg_free(zh_msg_t * msg)
 {
     __msg_free(msg);

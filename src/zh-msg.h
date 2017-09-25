@@ -36,6 +36,7 @@
  *  - zh_msg_get_type() : Get the zh_msg_type_t of the message      *
  *  - zh_msg_prop_t     : Enumerated message property types         *
  *  - zh_msg_get_prop() : Get a property of a message               *
+ *  - zh_msg_put_body() : Add body data to a message                *
  *  - zh_msg_free()     : Free a message handle                     *
  *                                                                  *
  * SYMBOLS FOR REQUEST MESSAGES (ZH_MSG_REQ)                        *
@@ -88,6 +89,8 @@ typedef enum {
     ZH_MSG_RES_STAT_MSG, /**< Response Status Message*/
     ZH_MSG_HEADER, /**< Message header*/
     ZH_MSG_BODY,   /**< Message body*/
+
+
     ZH_MSG_RAW,    /**< Message raw data*/
     ZH_MSG_ID,     /**< 0MQ ID*/
 } zh_msg_prop_t;
@@ -104,6 +107,17 @@ typedef enum {
  *          data is set in the prop_len variable.
  */
 const void * zh_msg_get_prop(zh_msg_t * msg, zh_msg_prop_t prop, size_t * prop_len);
+
+/**
+ * Add data to message body
+ *
+ * @param   msg         ZHTTP message instance
+ * @param   data        Data to append
+ * @param   data_len    Data length
+ *
+ * @return 0 on success, <0 on failure
+ */
+int zh_msg_put_body(zh_msg_t * msg, const void * data, size_t data_len);
 
 /**
  * Free a ZHTTP Message
