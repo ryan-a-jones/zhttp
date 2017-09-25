@@ -39,6 +39,7 @@
  *  - zh_msg_put_body() : Add body data to a message                *
  *  - zh_msg_put_header_str()                                       *
  *  - zh_msg_put_header_strn() : Add a header field to a message    *
+ *  - zh_msg_iter_header() : Iterate through headers                *
  *  - zh_msg_free()     : Free a message handle                     *
  *                                                                  *
  * SYMBOLS FOR REQUEST MESSAGES (ZH_MSG_REQ)                        *
@@ -143,6 +144,29 @@ int zh_msg_put_header_str(zh_msg_t * msg, const char * header, const char * valu
  */
 int zh_msg_put_header_strn(zh_msg_t * msg, const void * header, size_t header_len,
                                            const void * value, size_t value_len);
+
+/**
+ * Callback function for iterating through header
+ *
+ * Buffers are NOT null-terminated. Use care.
+ *
+ * @param   data        User-Defined Data
+ * @param   header      Message header key
+ * @param   header_len  Length of header
+ * @param   value       Value of header key
+ * @param   value_len   Length of value
+ */
+typedef void (*zh_msg_iter_header_fun_t)(void * data, const void * header, size_t header_len,
+                                                      const void * value, size_t value_len);
+
+/**
+ * Iterate through message headers
+ *
+ * @param   msg         ZHTTP message instance
+ * @param   cb          Callback for iterator function
+ * @param   data        User-Defined Data passed to cb
+ */
+void zh_msg_iter_header(zh_msg_t * msg, zh_msg_iter_header_fun_t cb, void * data);
 
 /**
  * Free a ZHTTP Message

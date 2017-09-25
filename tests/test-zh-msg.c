@@ -351,6 +351,69 @@ static void test_zh_msg_put_header()
     free(req);
 }
 
+/*
+ *Test header iterator function
+ */
+
+static const struct {
+    const char  * header,
+                * value;
+} iter_headers[] = {
+    {"Head1", "Val1"},
+    {"Head2", "Val2"},
+    {"Head3", "Val3"},
+    {"Head4", "Val4"},
+};
+
+static size_t iter_headers_size = sizeof(iter_headers)/sizeof(iter_headers[0]);
+
+void _iter_header_fun(void * data, const void * header, size_t header_len, const void * value, size_t value_len)
+{
+    size_t * i = data;
+    const char * key, * val;
+
+    assert(*i < iter_headers_size);
+
+    key = iter_headers[*i].header;
+    val = iter_headers[*i].value;
+
+    assert(strlen(key) == header_len);
+    assert(!memcmp(key, header, header_len));
+    assert(strlen(val) == value_len);
+    assert(!memcmp(val, value, value_len));
+
+    (*i)++;
+}
+
+static void test_zh_msg_iter_header()
+{
+    zh_msg_t * req, * res;
+    size_t i;
+    const char * key, * val;
+
+    assert((req = calloc(1, sizeof(zh_msg_t))));
+    memcpy(req->id.data, "1234", 4);
+    req->id.len = 4;
+
+    assert((res = zh_msg_res(req, 200)));
+    assert(!zh_msg_put_body(res, "Body Data", 9));
+
+    /*Insert headers*/
+    for(i=0; i<iter_headers_size; i++){
+        key = iter_headers[i].header;
+        val = iter_headers[i].value;
+        assert(!zh_msg_put_header_str(res, key, val));
+    }
+
+    /*Iterate through headers with _iter_header_fun*/
+    i = 0;
+    zh_msg_iter_header(res, _iter_header_fun, &i);
+    assert(i == iter_headers_size);
+
+    zh_msg_free(res);
+    free(req);
+}
+
 /*Run Tests*/
 int main(void)
 {
@@ -363,5 +426,6 @@ int main(void)
     test_zh_msg_res_str();
     test_zh_msg_put_body();
     test_zh_msg_put_header();
+    test_zh_msg_iter_header();
     return 0;
 }

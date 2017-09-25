@@ -323,6 +323,36 @@ fail :
     return NULL;
 }
 
+void zh_msg_iter_header(zh_msg_t * msg, zh_msg_iter_header_fun_t cb, void * data)
+{
+    void * head_start, * head_end,
+         * val_start, * val_end,
+         * key_start, * key_end;
+
+    if(!cb) return;
+
+    head_start = msg->header.data;
+    head_end   = head_start + msg->header.len;
+
+    while(head_start < head_end){
+        /*Find the end of the current header*/
+        val_end = __zh_memmem(head_start, head_end-head_start, ZH_CRLF, ZH_CRLF_LEN);
+        if(!val_end) break;
+
+        /*Find colon delimiter*/
+        key_start = head_start;
+        key_end = memchr(key_start, ':', val_end-key_start);
+        if(!key_end) break;
+
+        /*Value starts after colon*/
+        val_start = key_end + 1;
+
+        /*Callback to function*/
+        cb(data, key_start, key_end-key_start, val_start, val_end-val_start);
+
+        head_start = val_end + ZH_CRLF_LEN;
+    }
+}
 
 /********************************************************************************
  *                         PROTECTED FUNCTIONS                                  *
