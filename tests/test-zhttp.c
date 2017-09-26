@@ -59,10 +59,15 @@ static void test_zhttp_alloc()
 /**
  * Test Event Registration
  */
+static int _free_count = 0;
+static void _free_fun(void * data)
+{
+    (void) data;
+    _free_count++;
+}
 static int _event_pass(const zh_msg_t * msg, void * data)
 {
-    (void) msg;
-    (void) data;
+    (void) msg; (void) data;
     return ZH_EV_PASS;
 }
 
@@ -78,15 +83,14 @@ static void test_zhttp_ev_reg()
     assert((zh = zhttp_new(socket)));
     assert(zh->socket == socket);
 
-    for(i=0;i<10;i++){
-        assert(!zhttp_ev_reg(zh, _event_pass, (void *) i));
-    }
+    for(i=0;i<10;i++)
+        assert(!zhttp_ev_reg(zh, _event_pass, _free_fun, (void *)i));
 
     /*Verify order and length*/
     i=0;
     ev_node_foreach(ev, zh->ev_head){
         assert(ev->cb = _event_pass);
-        assert(ev->data == (void *) i);
+        assert(ev->data == (void *)i);
         i++;
     }
     assert(i==10);
@@ -97,6 +101,8 @@ static void test_zhttp_ev_reg()
     zhttp_destroy(zh);
     assert(!(zmq_close(socket)));
     assert(!(zmq_ctx_term(ctx)));
+
+    assert(_free_count == 10);
 }
 
 /*Run Tests*/

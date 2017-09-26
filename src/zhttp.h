@@ -69,12 +69,21 @@ typedef enum {
 typedef zhttp_ev_ret_t (* zhttp_ev_fun_t)(const zh_msg_t * msg, void * data);
 
 /**
+ * Free function handler
+ *
+ * @param data  Data to be freed
+ */
+typedef void (*zhttp_free_fun_t)(void * data);
+
+/**
  * Register an event handler
  *
  * @param zh    ZHTTP handle
  * @param ev    Event handler
+ * @param free  Function to free data when zh is destroyed.
+ *              May be set to NULL if unneeded.
  * @param data  User data to be passed to handle
  */
-int zhttp_ev_reg(zhttp_t * zh, zhttp_ev_fun_t ev, void * data);
+int zhttp_ev_reg(zhttp_t * zh, zhttp_ev_fun_t ev, zhttp_free_fun_t free, void * data);
 
 #endif

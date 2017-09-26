@@ -48,7 +48,7 @@ void zhttp_destroy(zhttp_t * zh)
     free(zh);
 }
 
-int zhttp_ev_reg(zhttp_t * zh, zhttp_ev_fun_t ev, void * data)
+int zhttp_ev_reg(zhttp_t * zh, zhttp_ev_fun_t ev, zhttp_free_fun_t free, void * data)
 {
     struct http_ev_node * new_node = NULL;
 
@@ -60,6 +60,7 @@ int zhttp_ev_reg(zhttp_t * zh, zhttp_ev_fun_t ev, void * data)
 
     new_node->cb = ev;
     new_node->data = data;
+    new_node->free = free;
 
     if(!(zh->ev_head && zh->ev_tail)) //This is the first event
         zh->ev_head = new_node;
