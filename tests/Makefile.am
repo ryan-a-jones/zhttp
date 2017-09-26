@@ -1,5 +1,6 @@
 include $(top_srcdir)/Makefile.common
 
+AM_CFLAGS += -fsanitize=leak
 AM_LDFLAGS += $(zhttp_lib)
 
 check_PROGRAMS =

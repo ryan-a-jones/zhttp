@@ -281,6 +281,8 @@ zh_msg_t * zh_msg_res_strn(zh_msg_t * req, int stat, const char * stat_msg, size
 
     res->type = ZH_MSG_RES;
 
+    res->socket = req->socket;
+
     msg_size = stat_msg_len + sizeof(ZH_HTTP) + 8;
     if(__msg_data_increase_by(res, msg_size))
         goto fail;

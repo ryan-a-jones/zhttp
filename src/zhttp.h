@@ -9,6 +9,13 @@
 #include "zh-cli.h" // HTTP Client Header
 
 /**
+ * ZHTTP Handler
+ *
+ * An opaque structure for handling
+ */
+typedef struct zhttp zhttp_t;
+
+/**
  * Initialize 0MQ Socket
  *
  * @param context 0MQ Context - See man 3 zmq_ctx_new
@@ -23,5 +30,51 @@ static inline void * zhttp_socket(void * context)
 {
     return zmq_socket(context, ZMQ_STREAM);
 }
+
+/**
+ * Create a new ZHTTP instance
+ *
+ * @param   socket  0MQ Socket
+ *
+ * @returns New ZHTTP handle or NULL on failure
+ *          Free with call to zhttp_destroy()
+ */
+zhttp_t * zhttp_new(void * socket);
+
+/**
+ * Free ZHTTP resources
+ *
+ * @param zh ZHTTP handle
+ */
+void zhttp_destroy(zhttp_t * zh);
+
+/**
+ * ZHTTP return types
+ */
+typedef enum {
+    ZH_EV_ERROR    = -1, /**< A fatal error has occurred*/
+    ZH_EV_OK       =  0, /**< The event returned and handled request data*/
+    ZH_EV_PASS     =  1, /**< The event was handled without error but did
+                              not process request data*/
+} zhttp_ev_ret_t;
+
+/**
+ * Event Handler
+ *
+ * @returns Status of event handling.
+ *          If ZH_EV_ERROR is returned, the event loop exits with error.
+ *          If ZH_EV_OK is returned, all other handlers are skipped for this event.
+ *          If ZH_EV_PASS is returned, all other handlers are processed.
+ */
+typedef zhttp_ev_ret_t (* zhttp_ev_fun_t)(const zh_msg_t * msg, void * data);
+
+/**
+ * Register an event handler
+ *
+ * @param zh    ZHTTP handle
+ * @param ev    Event handler
+ * @param data  User data to be passed to handle
+ */
+int zhttp_ev_reg(zhttp_t * zh, zhttp_ev_fun_t ev, void * data);
 
 #endif

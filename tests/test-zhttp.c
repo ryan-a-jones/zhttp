@@ -2,6 +2,7 @@
 #include <assert.h>
 
 #include "zhttp.h"
+#include "zhttp-priv.h"
 
 /**
  * Test that socket is returned correctly.
@@ -26,9 +27,83 @@ static void test_zhttp_socket()
     assert(!(zmq_ctx_term(ctx)));
 }
 
+/**
+ * Test basic allocation functions
+ */
+static void test_zhttp_alloc()
+{
+    void * ctx, * socket;
+    zhttp_t * zh;
+
+    /*Test with valid socket*/
+    assert((ctx = zmq_ctx_new()));
+    assert((socket = zhttp_socket(ctx)));
+    assert((zh = zhttp_new(socket)));
+    assert(zh->socket == socket);
+    zhttp_destroy(zh);
+    assert(!(zmq_close(socket)));
+    assert(!(zmq_ctx_term(ctx)));
+
+    /*Test with invalid socket*/
+    assert((ctx = zmq_ctx_new()));
+    assert((socket = zmq_socket(ctx, ZMQ_ROUTER)));
+    assert(!(zh = zhttp_new(socket)));
+    assert(!(zmq_close(socket)));
+    assert(!(zmq_ctx_term(ctx)));
+
+    /*Test guards*/
+    assert(!zhttp_new(NULL));
+    zhttp_destroy(NULL);
+}
+
+/**
+ * Test Event Registration
+ */
+static int _event_pass(const zh_msg_t * msg, void * data)
+{
+    (void) msg;
+    (void) data;
+    return ZH_EV_PASS;
+}
+
+static void test_zhttp_ev_reg()
+{
+    struct http_ev_node * ev;
+    void * ctx, * socket;
+    zhttp_t * zh;
+    long i;
+
+    assert((ctx = zmq_ctx_new()));
+    assert((socket = zhttp_socket(ctx)));
+    assert((zh = zhttp_new(socket)));
+    assert(zh->socket == socket);
+
+    for(i=0;i<10;i++){
+        assert(!zhttp_ev_reg(zh, _event_pass, (void *) i));
+    }
+
+    /*Verify order and length*/
+    i=0;
+    ev_node_foreach(ev, zh->ev_head){
+        assert(ev->cb = _event_pass);
+        assert(ev->data == (void *) i);
+        i++;
+    }
+    assert(i==10);
+
+    /*Verify tail is indeed at the end*/
+    assert(!zh->ev_tail->next);
+
+    zhttp_destroy(zh);
+    assert(!(zmq_close(socket)));
+    assert(!(zmq_ctx_term(ctx)));
+}
+
 /*Run Tests*/
 int main(void)
 {
     test_zhttp_socket();
+    test_zhttp_alloc();
+    test_zhttp_ev_reg();
     return 0;
 }

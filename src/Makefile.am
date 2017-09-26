@@ -9,7 +9,8 @@ zhttpinclude_HEADERS = zhttp.h \
 					   zh-status.h \
 					   zh-msg.h
 
-noinst_HEADERS = zh-msg-priv.h
+noinst_HEADERS = zh-msg-priv.h \
+				 zhttp-priv.h
 
 lib_LTLIBRARIES = libzhttp.la
 libzhttp_la_SOURCES = zhttp.c \
