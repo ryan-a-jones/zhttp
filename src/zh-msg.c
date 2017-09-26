@@ -1,4 +1,5 @@
 #include "zhttp.h"
+#include "zhttp-priv.h"
 #include "zh-msg-priv.h"
 
 #include <stdlib.h>
@@ -165,19 +166,19 @@ void zh_msg_free(zh_msg_t * msg)
     __msg_free(msg);
 }
 
-zh_msg_t * zh_msg_req(void * sock, zh_method_t method, const char * url)
+zh_msg_t * zh_msg_req(zhttp_t * zh, zh_method_t method, const char * url)
 {
-    return zh_msg_req_str(sock, zh_method_to_str(method), url, ZH_HTTP);
+    return zh_msg_req_str(zh, zh_method_to_str(method), url, ZH_HTTP);
 }
 
-zh_msg_t * zh_msg_req_str(void * sock, const char * method, const char * url, const char * httpv)
+zh_msg_t * zh_msg_req_str(zhttp_t * zh, const char * method, const char * url, const char * httpv)
 {
     if(method && url && httpv)
-        return zh_msg_req_strn(sock, method, strlen(method), url, strlen(url), httpv, strlen(httpv));
+        return zh_msg_req_strn(zh, method, strlen(method), url, strlen(url), httpv, strlen(httpv));
 
     return NULL;
 }
-zh_msg_t * zh_msg_req_strn( void * sock,
+zh_msg_t * zh_msg_req_strn( zhttp_t * zh,
                             const char * method, size_t method_len,
                             const char * url, size_t url_len,
                             const char * httpv, size_t httpv_len)
@@ -189,11 +190,11 @@ zh_msg_t * zh_msg_req_strn( void * sock,
     if(!(msg = __msg_new(ZH_MSG_INIT_SIZE)))
         goto fail;
 
-	msg->socket = sock;
+	msg->socket = zh->socket;
 
     /*Get socket options*/
     msg->id.len = ZMQ_IDENTITY_LEN;
-    if(zmq_getsockopt(sock, ZMQ_IDENTITY, msg->id.data, &msg->id.len))
+    if(zmq_getsockopt(msg->socket, ZMQ_IDENTITY, msg->id.data, &msg->id.len))
         goto fail;
 
     msg->type = ZH_MSG_REQ;

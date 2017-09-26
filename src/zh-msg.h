@@ -1,6 +1,7 @@
 #ifndef _ZH_MSG_H
 #define _ZH_MSG_H
 
+#include "zhttp.h"
 #include "zh-method.h"
 
 /**
@@ -208,20 +209,21 @@ void zh_msg_free(zh_msg_t * msg);
  *
  * Free with call to zh_msg_free().
  *
+ * @param   zh      ZHTTP Handle
  * @param   zsock   The ZMQ socket to make a request against
  * @param   method  The HTTP method to use
  * @param   url     The relative URL to request
  * @returns zh_msg_t request instance or NULL if memory allocation
  *          failure occurs.
  */
-zh_msg_t * zh_msg_req(void * zsock, zh_method_t method, const char * url);
+zh_msg_t * zh_msg_req(zhttp_t * zh, zh_method_t method, const char * url);
 
 /**
  * Construct a new zh_msg_t message request instance with custom options.
  *
  * Free with call to zh_msg_free().
  *
- * @param   zsock   The ZMQ socket to make a request against
+ * @param   zh      ZHTTP Handle
  * @param   method  The HTTP method string to use
  * @param   url     The relative URL to request
  * @param   httpv   The HTTP version to send with.
@@ -232,14 +234,14 @@ zh_msg_t * zh_msg_req(void * zsock, zh_method_t method, const char * url);
  * @returns zh_msg_t request instance or NULL if memory allocation
  *          failure occurs.
  */
-zh_msg_t * zh_msg_req_str(void * zsock, const char * method, const char * url, const char * httpv);
+zh_msg_t * zh_msg_req_str(zhttp_t * zh, const char * method, const char * url, const char * httpv);
 
 /**
  * Construct a new zh_msg_t message request instance with custom options.
  *
  * Free with call to zh_msg_free().
  *
- * @param   zsock   The ZMQ socket to make a request against
+ * @param   zh      ZHTTP Handle
  * @param   method  The HTTP method string to use
  * @param   method_len The length of the method string
  * @param   url     The relative URL to request
@@ -254,7 +256,7 @@ zh_msg_t * zh_msg_req_str(void * zsock, const char * method, const char * url, c
  * @returns zh_msg_t request instance or NULL if memory allocation
  *          failure occurs.
  */
-zh_msg_t * zh_msg_req_strn( void * zsock,
+zh_msg_t * zh_msg_req_strn( zhttp_t * zh,
                             const char * method, size_t method_len,
                             const char * url, size_t url_len,
                             const char * httpv, size_t httpv_len);

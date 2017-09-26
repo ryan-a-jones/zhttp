@@ -1,7 +1,14 @@
 #include "zhttp.h"
 #include "zhttp-priv.h"
+#include "zh-msg-priv.h"
 
 #include <stdlib.h>
+
+/********************************************************************************
+ *                           PRIVATE UTILITIES                                  *
+ *******************************************************************************/
+
+#define _zhttp_send(sock, buf, len) zmq_send(sock, buf, len, ZMQ_SNDMORE)
 
 /********************************************************************************
  *                          PUBLIC API FUNCTIONS                                *
@@ -67,6 +74,83 @@ int zhttp_ev_reg(zhttp_t * zh, zhttp_ev_fun_t ev, zhttp_free_fun_t free, void * 
     else //Append to tail
         zh->ev_tail->next = new_node;
     zh->ev_tail = new_node;
+
+    return 0;
+}
+
+int zhttp_recv(zhttp_t * zh, int zmq_flags)
+{
+    int rc = 0;
+
+    void * data;
+    size_t data_len;
+
+    unsigned char id[ZMQ_IDENTITY_LEN];
+    size_t id_len;
+
+    zmq_msg_t msg;
+    zh_msg_t * http_msg = NULL;
+
+    struct http_ev_node * ev;
+
+    (void) zmq_msg_init(&msg);
+
+    /*Get the ID Frame*/
+    rc = zmq_recv(zh->socket, &id, ZMQ_IDENTITY_LEN, zmq_flags);
+    if(rc == -1)
+        goto exit;
+    id_len = rc;
+
+    /*Get the HTTP frame*/
+    rc = zmq_msg_recv(&msg, zh->socket, 0); //Ignore zmq_flags here... need to block
+    if(rc == -1)
+        goto exit;
+    data = zmq_msg_data(&msg);
+    data_len = zmq_msg_size(&msg);
+
+    /*Convert to HTTP Message*/
+    http_msg = __zh_msg_req_from_data(zh->socket, id, id_len, data, data_len);
+    if(!http_msg){
+        rc = -1;
+        goto exit;
+    }
+
+    /*Iterate through event nodes*/
+    ev_node_foreach(ev, zh->ev_head){
+        rc = ev->cb(http_msg, ev->data);
+        switch(rc){
+            case ZH_EV_ERROR :
+            case ZH_EV_OK :
+                goto exit;
+            case ZH_EV_PASS :
+                break;
+            default :
+                rc = -1;
+                goto exit;
+        }
+    }
+
+    rc = 0;
+exit :
+    zmq_msg_close(&msg);
+    if(http_msg)
+        zh_msg_free(http_msg);
+    return rc;
+}
+
+int zhttp_send(zh_msg_t * msg)
+{
+    int rc;
+
+    /*Send ID first*/
+    rc = _zhttp_send(msg->socket, msg->id.data, msg->id.len);
+    if(rc != (int) msg->id.len)
+        return -1;
+
+    /*Send Data*/
+    rc = _zhttp_send(msg->socket, msg->raw.data, msg->raw.len);
+    if(rc != (int) msg->raw.len)
+        return -1;
 
     return 0;
 }

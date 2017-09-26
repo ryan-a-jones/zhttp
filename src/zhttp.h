@@ -3,17 +3,17 @@
 
 #include <zmq.h>
 
-#include "zh-method.h" // HTTP Method Header
-#include "zh-msg.h" // HTTP Message Header
-#include "zh-srv.h" // HTTP Server Header
-#include "zh-cli.h" // HTTP Client Header
-
 /**
  * ZHTTP Handler
  *
  * An opaque structure for handling
  */
 typedef struct zhttp zhttp_t;
+
+#include "zh-method.h" // HTTP Method Header
+#include "zh-msg.h" // HTTP Message Header
+#include "zh-srv.h" // HTTP Server Header
+#include "zh-cli.h" // HTTP Client Header
 
 /**
  * Initialize 0MQ Socket
@@ -85,5 +85,21 @@ typedef void (*zhttp_free_fun_t)(void * data);
  * @param data  User data to be passed to handle
  */
 int zhttp_ev_reg(zhttp_t * zh, zhttp_ev_fun_t ev, zhttp_free_fun_t free, void * data);
+
+/**
+ * Receive a new HTTP message
+ *
+ * @param zh        ZHTTP handle
+ * @param zmq_flags Flags to pass to 0MQ
+ *
+ */
+int zhttp_recv(zhttp_t * zh, int zmq_flags);
+
+/**
+ * Send an HTTP message
+ *
+ * @param msg HTTP Message to Send
+ */
+int zhttp_send(zh_msg_t * msg);
 
 #endif

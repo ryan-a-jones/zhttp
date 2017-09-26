@@ -30,6 +30,7 @@ static void test_zh_memmem()
 static void test_zh_msg_req_str()
 {
     void * ctx, * sock;
+    zhttp_t * zh;
     zh_msg_t * msg;
     const void * prop;
     size_t prop_len;
@@ -38,9 +39,10 @@ static void test_zh_msg_req_str()
     assert(ctx = zmq_ctx_new());
     assert(sock = zhttp_socket(ctx));
     assert(!zmq_connect(sock, "inproc://test_zh_msg_req_str"));
+    assert((zh = zhttp_new(sock)));
 
     /*Valid input with non-standard method*/
-    assert((msg = zh_msg_req_str(sock, "AMETHOD", "/a/url", "HTTP/0.8")));
+    assert((msg = zh_msg_req_str(zh, "AMETHOD", "/a/url", "HTTP/0.8")));
     assert(ZH_MSG_REQ == zh_msg_get_type(msg));
 
     assert((prop = zh_msg_get_prop(msg, ZH_MSG_REQ_METHOD, &prop_len)));
@@ -64,6 +66,7 @@ static void test_zh_msg_req_str()
     assert(!zh_msg_req_str(sock, "GET", NULL, "HTTP/1.1"));
     assert(!zh_msg_req_str(sock, "GET", "/api/v1", NULL));
 
+    zhttp_destroy(zh);
     zmq_close(sock);
     zmq_ctx_term(ctx);
 }
@@ -74,6 +77,7 @@ static void test_zh_msg_req_str()
 static void test_zh_msg_req()
 {
     void * ctx, * sock;
+    zhttp_t * zh;
     zh_msg_t * msg;
     const void * prop;
     size_t prop_len;
@@ -82,9 +86,10 @@ static void test_zh_msg_req()
     assert(ctx = zmq_ctx_new());
     assert(sock = zhttp_socket(ctx));
     assert(!zmq_connect(sock, "inproc://test_zh_msg_req_str"));
+    assert((zh = zhttp_new(sock)));
 
     /*Valid input with standard method*/
-    assert((msg = zh_msg_req(sock, ZH_GET, "/this/url")));
+    assert((msg = zh_msg_req(zh, ZH_GET, "/this/url")));
     assert(msg->socket == sock);
     assert(ZH_MSG_REQ == zh_msg_get_type(msg));
     assert(zh_msg_req_get_method(msg) == ZH_GET);
@@ -102,6 +107,7 @@ static void test_zh_msg_req()
     assert(!memcmp("GET /this/url HTTP/1.1\r\n\r\n", prop, prop_len));
     zh_msg_free(msg);
 
+    zhttp_destroy(zh);
     zmq_close(sock);
     zmq_ctx_term(ctx);
 }

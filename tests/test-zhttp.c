@@ -105,11 +105,20 @@ static void test_zhttp_ev_reg()
     assert(_free_count == 10);
 }
 
+/**
+ * Test Receive Function
+ */
+static void test_zhttp_recv()
+{
+
+}
+
 /*Run Tests*/
 int main(void)
 {
     test_zhttp_socket();
     test_zhttp_alloc();
     test_zhttp_ev_reg();
+    test_zhttp_recv();
     return 0;
 }
